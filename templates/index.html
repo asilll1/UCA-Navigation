@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCA Campus Navigation System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .header .subtitle {
+            color: #666;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .main-container {
+            display: flex;
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: white;
+        }
+
+        .map-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.9rem;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .route-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .route-info h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .route-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .route-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .route-detail i {
+            color: #667eea;
+            width: 16px;
+        }
+
+        .building-info {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .building-info h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .building-card {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .building-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .building-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .building-description {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 90px;
+            left: 20px;
+            z-index: 1001;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .mobile-toggle i {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .reset-btn {
+            background: #6c757d;
+            margin-top: 0.5rem;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+                position: fixed;
+                top: 80px;
+                left: 0;
+                height: calc(100vh - 80px);
+                z-index: 999;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .header .subtitle {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus styles for keyboard navigation */
+        select:focus,
+        .btn:focus,
+        .mobile-toggle:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-map-marked-alt"></i> UCA Campus Navigation System</h1>
+        <div class="subtitle">Find your way around the campus with interactive maps</div>
+    </header>
+
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation panel">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="main-container">
+        <aside class="sidebar" id="sidebar">
+            <form method="POST" id="routeForm">
+                <div class="form-group">
+                    <label for="start">
+                        <i class="fas fa-map-marker-alt"></i> Start Location
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="start" name="start" required aria-describedby="start-help">
+                            <option value="">Select start location</option>
+                            <option value="Academic block">Academic block</option>
+                            <option value="A1 block">A1 block</option>
+                            <option value="A2 block">A2 block</option>
+                            <option value="B1 block">B1 block</option>
+                            <option value="B2 block">B2 block</option>
+                        </select>
+                    </div>
+                    <div id="start-help" class="sr-only">Select your starting point on campus</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dest">
+                        <i class="fas fa-flag-checkered"></i> Destination
+                    </label>
+                    <div class="select-wrapper">
+                        <select id="dest" name="dest" required aria-describedby="dest-help">
+                            <option value="">Select destination</option>
+                            <option value="Academic block">Academic block</option>
+                            <option value="A1 block">A1 block</option>
+                            <option value="A2 block">A2 block</option>
+                            <option value="B1 block">B1 block</option>
+                            <option value="B2 block">B2 block</option>
+                        </select>
+                    </div>
+                    <div id="dest-help" class="sr-only">Select your destination on campus</div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    <i class="fas fa-route"></i>
+                    <span>Show Route</span>
+                    <i class="fas fa-spinner loading" id="loadingSpinner"></i>
+                </button>
+
+                <button type="button" class="btn reset-btn" id="resetBtn">
+                    <i class="fas fa-undo"></i>
+                    <span>Reset Map</span>
+                </button>
+            </form>
+
+            {% if error %}
+            <div class="error-message" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if route_info %}
+            <div class="route-info">
+                <h3><i class="fas fa-info-circle"></i> Route Information</h3>
+                <div class="route-details">
+                    <div class="route-detail">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ route_info.estimated_time }} min</span>
+                    </div>
+                    <div class="route-detail">
+                        <i class="fas fa-ruler"></i>
+                        <span>{{ route_info.distance }}</span>
+                    </div>
+                    <div class="route-detail" style="grid-column: 1 / -1;">
+                        <i class="fas fa-route"></i>
+                        <span>{{ route_info.route_type }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="building-info">
+                <h3><i class="fas fa-building"></i> Campus Buildings</h3>
+                {% if building_descriptions %}
+                    {% for building, description in building_descriptions.items() %}
+                    <div class="building-card">
+                        <div class="building-name">{{ building }}</div>
+                        <div class="building-description">{{ description }}</div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </aside>
+
+        <main class="map-container">
+            {{ map|safe }}
+        </main>
+    </div>
+
+    <script>
+        // Mobile toggle functionality
+        const mobileToggle = document.getElementById('mobileToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mapFrame = document.getElementById('mapFrame');
+
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+
+        // Form handling
+        const form = document.getElementById('routeForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Update destination options based on start selection
+        function updateDestOptions() {
+            const startSelect = document.getElementById('start');
+            const destSelect = document.getElementById('dest');
+            const startValue = startSelect.value;
+            const currentDestValue = destSelect.value;
+
+            // Clear previous options
+            destSelect.innerHTML = '<option value="">Select destination</option>';
+
+            // Add all options except the selected start
+            const allOptions = [
+                'Academic block',
+                'A1 block', 
+                'A2 block',
+                'B1 block',
+                'B2 block'
+            ];
+
+            allOptions.forEach(option => {
+                if (option !== startValue) {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    destSelect.appendChild(optionElement);
+                }
+            });
+
+            // Restore previous selection if still valid
+            if (currentDestValue && currentDestValue !== startValue) {
+                destSelect.value = currentDestValue;
+            }
+        }
+
+        // Form submission with loading state
+        form.addEventListener('submit', (e) => {
+            const startValue = document.getElementById('start').value;
+            const destValue = document.getElementById('dest').value;
+
+            if (!startValue || !destValue) {
+                e.preventDefault();
+                alert('Please select both start and destination locations.');
+                return;
+            }
+
+            if (startValue === destValue) {
+                e.preventDefault();
+                alert('Start and destination cannot be the same.');
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            loadingSpinner.classList.add('show');
+            submitBtn.querySelector('span').textContent = 'Loading...';
+        });
+
+        // Reset functionality
+        resetBtn.addEventListener('click', () => {
+            form.reset();
+            // Reload the page to show empty map
+            window.location.href = '/';
+        });
+
+        // Start select change handler
+        document.getElementById('start').addEventListener('change', updateDestOptions);
+
+        // Load saved selections from localStorage
+        window.addEventListener('load', () => {
+            const savedStart = localStorage.getItem('startValue');
+            const savedDest = localStorage.getItem('destValue');
+
+            if (savedStart) {
+                document.getElementById('start').value = savedStart;
+                updateDestOptions();
+                
+                if (savedDest) {
+                    const destSelect = document.getElementById('dest');
+                    const options = Array.from(destSelect.options);
+                    const hasOption = options.some(option => option.value === savedDest);
+                    
+                    if (hasOption) {
+                        destSelect.value = savedDest;
+                    }
+                }
+            }
+        });
+
+        // Save selections to localStorage
+        form.addEventListener('submit', () => {
+            const startValue = document.getElementById('start').value;
+            const destValue = document.getElementById('dest').value;
+            
+            if (startValue && destValue) {
+                localStorage.setItem('startValue', startValue);
+                localStorage.setItem('destValue', destValue);
+            }
+        });
+
+        // Keyboard navigation support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && window.innerWidth <= 768) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Auto-hide sidebar on mobile after form submission
+        if (window.innerWidth <= 768) {
+            form.addEventListener('submit', () => {
+                setTimeout(() => {
+                    sidebar.classList.remove('show');
+                }, 1000);
+            });
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
