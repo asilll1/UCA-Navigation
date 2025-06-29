@@ -16,7 +16,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent body scrolling */
         }
 
         .header {
@@ -29,6 +29,7 @@
             left: 0;
             right: 0;
             z-index: 1000;
+            height: 80px;
         }
 
         .header h1 {
@@ -48,23 +49,33 @@
         .main-container {
             display: flex;
             margin-top: 80px;
-            min-height: calc(100vh - 80px);
+            height: calc(100vh - 80px);
+            overflow: hidden; /* Prevent container scrolling */
         }
 
         .sidebar {
             width: 350px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            padding: 2rem;
             box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-content {
+            flex: 1;
             overflow-y: auto;
-            transition: transform 0.3s ease;
+            padding: 2rem;
+            padding-bottom: 1rem;
         }
 
         .map-container {
             flex: 1;
             position: relative;
             background: white;
+            height: 100%;
+            overflow: hidden; /* Prevent map container scrolling */
         }
 
         .map-frame {
@@ -286,6 +297,25 @@
             background: #5a6268;
         }
 
+        /* Custom scrollbar for sidebar */
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -355,90 +385,92 @@
 
     <div class="main-container">
         <aside class="sidebar" id="sidebar">
-            <form method="POST" id="routeForm">
-                <div class="form-group">
-                    <label for="start">
-                        <i class="fas fa-map-marker-alt"></i> Start Location
-                    </label>
-                    <div class="select-wrapper">
-                        <select id="start" name="start" required aria-describedby="start-help">
-                            <option value="">Select start location</option>
-                            <option value="Academic block">Academic block</option>
-                            <option value="A1 block">A1 block</option>
-                            <option value="A2 block">A2 block</option>
-                            <option value="B1 block">B1 block</option>
-                            <option value="B2 block">B2 block</option>
-                        </select>
+            <div class="sidebar-content">
+                <form method="POST" id="routeForm">
+                    <div class="form-group">
+                        <label for="start">
+                            <i class="fas fa-map-marker-alt"></i> Start Location
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="start" name="start" required aria-describedby="start-help">
+                                <option value="" disabled selected>Select start location</option>
+                                <option value="Academic block">Academic block</option>
+                                <option value="A1 block">A1 block</option>
+                                <option value="A2 block">A2 block</option>
+                                <option value="B1 block">B1 block</option>
+                                <option value="B2 block">B2 block</option>
+                            </select>
+                        </div>
+                        <div id="start-help" class="sr-only">Select your starting point on campus</div>
                     </div>
-                    <div id="start-help" class="sr-only">Select your starting point on campus</div>
-                </div>
 
-                <div class="form-group">
-                    <label for="dest">
-                        <i class="fas fa-flag-checkered"></i> Destination
-                    </label>
-                    <div class="select-wrapper">
-                        <select id="dest" name="dest" required aria-describedby="dest-help">
-                            <option value="">Select destination</option>
-                            <option value="Academic block">Academic block</option>
-                            <option value="A1 block">A1 block</option>
-                            <option value="A2 block">A2 block</option>
-                            <option value="B1 block">B1 block</option>
-                            <option value="B2 block">B2 block</option>
-                        </select>
+                    <div class="form-group">
+                        <label for="dest">
+                            <i class="fas fa-flag-checkered"></i> Destination
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="dest" name="dest" required aria-describedby="dest-help">
+                                <option value="" disabled selected>Select destination</option>
+                                <option value="Academic block">Academic block</option>
+                                <option value="A1 block">A1 block</option>
+                                <option value="A2 block">A2 block</option>
+                                <option value="B1 block">B1 block</option>
+                                <option value="B2 block">B2 block</option>
+                            </select>
+                        </div>
+                        <div id="dest-help" class="sr-only">Select your destination on campus</div>
                     </div>
-                    <div id="dest-help" class="sr-only">Select your destination on campus</div>
-                </div>
 
-                <button type="submit" class="btn" id="submitBtn">
-                    <i class="fas fa-route"></i>
-                    <span>Show Route</span>
-                    <i class="fas fa-spinner loading" id="loadingSpinner"></i>
-                </button>
-
-                <button type="button" class="btn reset-btn" id="resetBtn">
-                    <i class="fas fa-undo"></i>
-                    <span>Reset Map</span>
-                </button>
-            </form>
-
-            {% if error %}
-            <div class="error-message" role="alert">
-                <i class="fas fa-exclamation-triangle"></i>
-                {{ error }}
-            </div>
-            {% endif %}
-
-            {% if route_info %}
-            <div class="route-info">
-                <h3><i class="fas fa-info-circle"></i> Route Information</h3>
-                <div class="route-details">
-                    <div class="route-detail">
-                        <i class="fas fa-clock"></i>
-                        <span>{{ route_info.estimated_time }} min</span>
-                    </div>
-                    <div class="route-detail">
-                        <i class="fas fa-ruler"></i>
-                        <span>{{ route_info.distance }}</span>
-                    </div>
-                    <div class="route-detail" style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn" id="submitBtn">
                         <i class="fas fa-route"></i>
-                        <span>{{ route_info.route_type }}</span>
+                        <span>Show Route</span>
+                        <i class="fas fa-spinner loading" id="loadingSpinner"></i>
+                    </button>
+
+                    <button type="button" class="btn reset-btn" id="resetBtn">
+                        <i class="fas fa-undo"></i>
+                        <span>Reset Map</span>
+                    </button>
+                </form>
+
+                {% if error %}
+                <div class="error-message" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                {% if route_info %}
+                <div class="route-info">
+                    <h3><i class="fas fa-info-circle"></i> Route Information</h3>
+                    <div class="route-details">
+                        <div class="route-detail">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ route_info.estimated_time }} min</span>
+                        </div>
+                        <div class="route-detail">
+                            <i class="fas fa-ruler"></i>
+                            <span>{{ route_info.distance }}</span>
+                        </div>
+                        <div class="route-detail" style="grid-column: 1 / -1;">
+                            <i class="fas fa-route"></i>
+                            <span>{{ route_info.route_type }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% endif %}
-
-            <div class="building-info">
-                <h3><i class="fas fa-building"></i> Campus Buildings</h3>
-                {% if building_descriptions %}
-                    {% for building, description in building_descriptions.items() %}
-                    <div class="building-card">
-                        <div class="building-name">{{ building }}</div>
-                        <div class="building-description">{{ description }}</div>
-                    </div>
-                    {% endfor %}
                 {% endif %}
+
+                <div class="building-info">
+                    <h3><i class="fas fa-building"></i> Campus Buildings</h3>
+                    {% if building_descriptions %}
+                        {% for building, description in building_descriptions.items() %}
+                        <div class="building-card">
+                            <div class="building-name">{{ building }}</div>
+                            <div class="building-description">{{ description }}</div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
         </aside>
 
@@ -451,7 +483,6 @@
         // Mobile toggle functionality
         const mobileToggle = document.getElementById('mobileToggle');
         const sidebar = document.getElementById('sidebar');
-        const mapFrame = document.getElementById('mapFrame');
 
         mobileToggle.addEventListener('click', () => {
             sidebar.classList.toggle('show');
@@ -479,8 +510,8 @@
             const startValue = startSelect.value;
             const currentDestValue = destSelect.value;
 
-            // Clear previous options
-            destSelect.innerHTML = '<option value="">Select destination</option>';
+            // Clear previous options and add placeholder
+            destSelect.innerHTML = '<option value="" disabled selected>Select destination</option>';
 
             // Add all options except the selected start
             const allOptions = [
@@ -531,7 +562,9 @@
 
         // Reset functionality
         resetBtn.addEventListener('click', () => {
-            form.reset();
+            // Reset selects to placeholder
+            document.getElementById('start').selectedIndex = 0;
+            document.getElementById('dest').innerHTML = '<option value="" disabled selected>Select destination</option>';
             // Reload the page to show empty map
             window.location.href = '/';
         });
